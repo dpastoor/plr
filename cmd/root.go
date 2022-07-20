@@ -57,6 +57,7 @@ func newRootCmd(version string) *rootCmd {
 	viper.BindPFlag("loglevel", cmd.PersistentFlags().Lookup("loglevel"))
 	cmd.AddCommand(newDebugCmd(root.cfg))
 	cmd.AddCommand(newManCmd().cmd)
+	cmd.AddCommand(newRunCmd().cmd)
 	root.cmd = cmd
 	return root
 }
