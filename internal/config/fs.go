@@ -1,38 +1,12 @@
 package config
 
-import (
-	"path/filepath"
-
-	"github.com/adrg/xdg"
-)
-
-func GetConfigPath() (string, error) {
-	return xdg.ConfigFile("plr/config.yml")
-}
-
-func GetRootConfigPath() string {
-	return filepath.Join(xdg.ConfigHome, "plr")
-}
-func GetRootDataPath() string {
-	return filepath.Join(xdg.DataHome, "plr")
-}
-
-func Read() (Config, string, error) {
+func Read(path string) (Config, error) {
 	// for now don't check on error until consider what type of
 	// logging - this should be completely optional anyway
-	globalConfigPath, err := xdg.SearchConfigFile("plr/config.yml")
+
+	cfg, err := read(path)
 	if err != nil {
-		// this message is and print out all the paths that were searched
-		// for example, by mangling the name to `onfig.yml` to see what the
-		// error was, got the following result:
-		//
-		// could not locate `config.yml` in any of the following paths:
-		// /Users/devinp/Library/Application Support/plr,
-		// /Users/devinp/Library/Preferences/plr,
-		// /Library/Application Support/plr, /Library/Preferences/plr
-		// exit status 1
-		return Config{}, "", err
+		return cfg, err
 	}
-	cfg, err := read(globalConfigPath)
-	return cfg, globalConfigPath, err
+	return cfg, cfg.Validate()
 }

@@ -1,0 +1,24 @@
+{
+  "sessions": [
+    {
+      "user": "user1"
+    },
+    {
+      "user": "user1",
+      "name": "test-session",
+      "id": "abc-1234"
+    },
+    {
+      "user": "user1",
+      "headless": true,
+      "new": true,
+      "delay": 1.5
+    },
+    {
+      "user": "user1",
+      "new": false,
+      "headless": false,
+      "delay": 0
+    }
+  ]
+}
