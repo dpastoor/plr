@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/metrumresearchgroup/command"
@@ -24,7 +25,7 @@ func NewRunOpts(options ...func(*runOpts)) *runOpts {
 	return opts
 }
 
-func WithHeadless(opts *runOpts) func(*runOpts) {
+func WithHeadless() func(*runOpts) {
 	return func(opts *runOpts) {
 		opts.Headless = true
 	}
@@ -32,26 +33,26 @@ func WithHeadless(opts *runOpts) func(*runOpts) {
 
 // WithSessionName sets the session name and expects a existing session
 // therfore sets newsession to false
-func WithSessionByName(opts *runOpts, name string) func(*runOpts) {
+func WithSessionByName(name string) func(*runOpts) {
 	return func(opts *runOpts) {
 		opts.NewSession = false
 		opts.SessionName = name
 	}
 }
 
-func WithId(opts *runOpts, id string) func(*runOpts) {
+func WithId(id string) func(*runOpts) {
 	return func(opts *runOpts) {
 		opts.Id = id
 	}
 }
 
-func WithSessionName(opts *runOpts, sessionName string) func(*runOpts) {
+func WithSessionName(sessionName string) func(*runOpts) {
 	return func(opts *runOpts) {
 		opts.SessionName = sessionName
 	}
 }
 
-func NewRunner(script string, url string, user string, password string, opts *runOpts) error {
+func NewRunner(ctx context.Context, script string, url string, user string, password string, opts *runOpts) *command.Cmd {
 	env := environ.FromOS()
 	cmdArgs := []string{
 		script,
@@ -72,15 +73,15 @@ func NewRunner(script string, url string, user string, password string, opts *ru
 		cmdArgs = append(cmdArgs, fmt.Sprintf("--session-name=%s", opts.SessionName))
 	}
 
-	cmd := command.New("python", cmdArgs...)
+	cmd := command.NewWithContext(ctx, "python", cmdArgs...)
 	cmd.Env = env.AsSlice()
 	command.InteractiveIO().Apply(cmd)
 	// using our command package
-	if err := cmd.Start(); err != nil {
-		return err
-	}
-	if err := cmd.Wait(); err != nil {
-		return err
-	}
-	return nil
+	// if err := cmd.Start(); err != nil {
+	// 	return err
+	// }
+	// if err := cmd.Wait(); err != nil {
+	// 	return err
+	// }
+	return cmd
 }
