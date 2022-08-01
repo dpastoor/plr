@@ -24,12 +24,12 @@ type User struct {
 
 // Session defines a new selenium session
 type Session struct {
-	User     string   `json:"user"`
-	Name     *string  `json:"name"`
-	Id       *string  `json:"id"`
-	Headless *bool    `json:"headless"`
-	New      *bool    `json:"new"`
-	Delay    *float64 `json:"delay"`
+	User     string   `json:"user,omitempty"`
+	Name     *string  `json:"name,omitempty"`
+	Id       *string  `json:"id,omitempty"`
+	Headless *bool    `json:"headless,omitempty"`
+	New      *bool    `json:"new,omitempty"`
+	Delay    *float64 `json:"delay,omitempty"`
 }
 
 func (cfg Config) Validate() error {
@@ -47,6 +47,14 @@ func (cfg Config) Validate() error {
 	_, notUsers := lo.Difference(users, sessionUsers)
 	if len(notUsers) > 0 {
 		return fmt.Errorf("all session user(s) must be defined in user section, currently missing: %v", strings.Join(lo.Uniq(notUsers), ", "))
+	}
+
+	for _, session := range cfg.Sessions {
+		if session.New != nil && !*session.New {
+			if session.Name == nil || (session.Name != nil && *session.Name == "") {
+				return errors.New("any non-new session must also have a name")
+			}
+		}
 	}
 	return nil
 }
