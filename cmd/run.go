@@ -66,14 +66,10 @@ loop:
 						return
 					case <-time.Tick(time.Duration(rand.Intn(100000)) * time.Millisecond):
 						fmt.Printf("launching session %v for user: %s\n", num, sessionUser)
-						opts := runner.NewRunOpts(runner.WithHeadless())
-						cmd := runner.NewRunner(ctx, "simple_user_sim.py", "http://ec2-18-117-188-179.us-east-2.compute.amazonaws.com:8787", sessionUser, "password123", opts)
-						if err := cmd.Start(); err != nil {
+						opts := runner.NewDefaultRunOpts(runner.WithHeadless())
+						runner := runner.NewRunner(ctx, "simple_user_sim.py", "http://ec2-18-117-188-179.us-east-2.compute.amazonaws.com:8787", sessionUser, "password123", opts)
+						if err := runner.Run(); err != nil {
 							fmt.Printf("cmd failed to start session %v for user: %s with err %s\n", num, sessionUser, err)
-							return
-						}
-						if err := cmd.Wait(); err != nil {
-							fmt.Printf("cmd failed waiting to complete session %v for user: %s with err %s\n", num, sessionUser, err)
 							return
 						}
 						fmt.Printf("completed session %v for user: %s\n", num, sessionUser)
