@@ -2,7 +2,12 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"os"
+	"strings"
+
+	"github.com/samber/lo"
 )
 
 type Config struct {
@@ -28,7 +33,21 @@ type Session struct {
 }
 
 func (cfg Config) Validate() error {
-
+	for _, user := range cfg.Users {
+		if user.Name == "" || user.Password == "" {
+			return errors.New("must set user name and password for all users")
+		}
+	}
+	users := lo.Map(cfg.Users, func(user User, _ int) string {
+		return user.Name
+	})
+	sessionUsers := lo.Map(cfg.Sessions, func(session Session, _ int) string {
+		return session.User
+	})
+	_, notUsers := lo.Difference(users, sessionUsers)
+	if len(notUsers) > 0 {
+		return fmt.Errorf("all session user(s) must be defined in user section, currently missing: %v", strings.Join(lo.Uniq(notUsers), ", "))
+	}
 	return nil
 }
 

@@ -1,0 +1,16 @@
+{
+  "sessions": [
+    {
+      "user": "user1"
+    },
+    {
+      "user": "user2"
+    }
+  ],
+  "users": [
+    {
+      "name": "user1",
+      "password": "password1"
+    }
+  ]
+}

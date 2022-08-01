@@ -56,3 +56,23 @@ func TestNewConfig(tt *testing.T) {
 		})
 	}
 }
+
+func TestMissingUser(tt *testing.T) {
+	tests := []struct {
+		name string
+		path string
+	}{
+		{
+			name: "missing user2",
+			path: "testdata/missing-user.json",
+		},
+	}
+	for _, test := range tests {
+		tt.Run(test.name, func(tt *testing.T) {
+			t := wrapt.WrapT(tt)
+			_, err := config.Read(test.path)
+			t.R.Error(err)
+			t.A.ErrorContains(err, "user2")
+		})
+	}
+}
