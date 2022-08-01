@@ -8,8 +8,13 @@ import (
 	"github.com/metrumresearchgroup/environ"
 )
 
+// Runner allows you to run commands
 type Runner struct {
 	cmd *command.Cmd
+	// might need to consider if want to be able to like reapply new options later or the like?
+	// right now thats not feasible since options get applied when constructing the command
+	// and don't want to prematurely overcomplicate things
+	opts *runOpts
 }
 
 func NewRunner(ctx context.Context, script string, url string, user string, password string, opts *runOpts) *Runner {
@@ -37,10 +42,15 @@ func NewRunner(ctx context.Context, script string, url string, user string, pass
 	cmd.Env = env.AsSlice()
 	command.WireIO(opts.Stdin, opts.Stdout, opts.Stderr).Apply(cmd)
 	return &Runner{
-		cmd: cmd,
+		cmd:  cmd,
+		opts: opts,
 	}
 }
 
 func (r *Runner) Run() error {
 	return r.cmd.Run()
+}
+
+func (r *Runner) GetOptions() runOpts {
+	return *r.opts
 }
