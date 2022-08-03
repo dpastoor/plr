@@ -14,11 +14,9 @@ type runOpts struct {
 	// default of new session to be true,
 	// and if false, need to provide an existing name
 	NewSession bool
-	// how long before starting the shell session
-	Delay  float64
-	Stdin  io.ReadCloser
-	Stdout io.Writer
-	Stderr io.Writer
+	Stdin      io.ReadCloser
+	Stdout     io.Writer
+	Stderr     io.Writer
 }
 
 // NewRunOpts sets up the options for a runner with a default
@@ -107,12 +105,6 @@ func WithSessionName(sessionName string) func(*runOpts) {
 	}
 }
 
-func WithDelay(delay float64) func(*runOpts) {
-	return func(opts *runOpts) {
-		opts.Delay = delay
-	}
-}
-
 // NewOptsFromSession creates a runOpts from a session
 func NewOptsFromSession(session config.Session) *runOpts {
 	opts := NewDefaultRunOpts()
@@ -133,9 +125,6 @@ func NewOptsFromSession(session config.Session) *runOpts {
 	}
 	if session.Id != nil && *session.Id != "" {
 		opts.Apply(WithId(*session.Id))
-	}
-	if session.Delay != nil && *session.Delay > 0 {
-		opts.Apply(WithDelay(*session.Delay))
 	}
 	return opts
 }

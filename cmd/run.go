@@ -3,15 +3,18 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"math/rand"
+	"math"
 	"os"
 	"os/signal"
 	"sync"
 	"time"
 
+	"github.com/dpastoor/plr/internal/config"
 	"github.com/dpastoor/plr/internal/runner"
+	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 type runCmd struct {
@@ -20,9 +23,20 @@ type runCmd struct {
 }
 
 type runOpts struct {
+	scenariosPath string
+	url           string
+	numSessions   int
 }
 
 func newRun(runOpts runOpts) error {
+	scenarios, err := config.Read(runOpts.scenariosPath)
+	url := runOpts.url
+	if url == "" {
+		url = scenarios.Url
+	}
+	if err != nil {
+		return err
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -41,48 +55,42 @@ func newRun(runOpts runOpts) error {
 			return
 		}
 	}()
-	numLaunched := 0
-	var users []string
-	for i := 11; i < 35; i++ {
-		users = append(users, fmt.Sprintf("user%d", i))
-	}
-	//var sessions []string
 	wg := &sync.WaitGroup{}
+	users := lo.SliceToMap(scenarios.Users, func(user config.User) (string, string) {
+		return user.Name, user.Password
+	})
 	//rand.Shuffle(len(sessions), func(i, j int) { sessions[i], sessions[j] = sessions[j], sessions[i] })
-loop:
-	for i := 0; i < 6; i++ {
-		for _, user := range users {
+	for i, session := range scenarios.Sessions {
+		if i >= runOpts.numSessions {
+			continue
+		}
+		wg.Add(1)
+		var delayMs int
+		if session.Delay != nil {
+			// just in case a negative delay slips
+			delayMs = int(math.Max(*session.Delay, 0) * 1000)
+		}
+		go func(wg *sync.WaitGroup, s config.Session, num int) {
+			defer wg.Done()
 			select {
 			case <-ctx.Done():
-				fmt.Println("got to ctx done")
-				break loop
-			default:
-				numLaunched += 1
-				wg.Add(1)
-				go func(wg *sync.WaitGroup, sessionUser string, num int) {
-					defer wg.Done()
-					select {
-					case <-ctx.Done():
-						return
-					case <-time.Tick(time.Duration(rand.Intn(100000)) * time.Millisecond):
-						fmt.Printf("launching session %v for user: %s\n", num, sessionUser)
-						opts := runner.NewDefaultRunOpts(runner.WithHeadless())
-						runner := runner.NewRunner(ctx, "simple_user_sim.py", "http://ec2-18-117-188-179.us-east-2.compute.amazonaws.com:8787", sessionUser, "password123", opts)
-						if err := runner.Run(); err != nil {
-							fmt.Printf("cmd failed to start session %v for user: %s with err %s\n", num, sessionUser, err)
-							return
-						}
-						fmt.Printf("completed session %v for user: %s\n", num, sessionUser)
-					}
-				}(wg, user, numLaunched)
+				return
+			case <-time.Tick(time.Duration(delayMs) * time.Millisecond):
+				fmt.Printf("launching session %v for user: %s\n", num, s.User)
+				opts := runner.NewOptsFromSession(s)
+				password, ok := users[s.User]
+				if !ok {
+					log.Errorf("could not look up password for user %s, not starting session %v", s.User, num)
+					return
+				}
+				runner := runner.NewRunner(ctx, "simple_user_sim.py", url, s.User, password, opts)
+				if err := runner.Run(); err != nil {
+					log.Errorf("cmd failed to start session %v for user: %s with err %s\n", num, s.User, err)
+					return
+				}
+				log.Infof("completed session %v for user: %s\n", num, s.User)
 			}
-		}
-		select {
-		case <-time.Tick(time.Second * 150):
-			continue
-		case <-ctx.Done():
-			break loop
-		}
+		}(wg, session, i+1)
 	}
 	wg.Wait()
 	fmt.Println("done waiting on sessions to finish/cleanup")
@@ -90,7 +98,14 @@ loop:
 }
 
 func setRunOpts(runOpts *runOpts) {
-
+	runOpts.scenariosPath = viper.GetString("scenarios-path")
+	runOpts.url = viper.GetString("url")
+	numSessions := viper.GetInt("num-sessions")
+	if numSessions == 0 {
+		runOpts.numSessions = math.MaxInt
+	} else {
+		runOpts.numSessions = numSessions
+	}
 }
 
 func (opts *runOpts) Validate() error {
@@ -119,6 +134,13 @@ func newRunCmd() *runCmd {
 			return nil
 		},
 	}
+	cmd.Flags().String("scenarios-path", "scenarios.json", "path to scenarios file")
+	viper.BindPFlag("scenarios-path", cmd.Flags().Lookup("scenarios-path"))
+	cmd.Flags().IntP("num-sessions", "n", 0, "number of sessions to run")
+	viper.BindPFlag("num-sessions", cmd.Flags().Lookup("num-sessions"))
+	cmd.Flags().String("url", "", "path to server")
+	viper.BindPFlag("url", cmd.Flags().Lookup("url"))
 	root.cmd = cmd
+
 	return root
 }

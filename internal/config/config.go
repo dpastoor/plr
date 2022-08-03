@@ -10,7 +10,7 @@ import (
 	"github.com/samber/lo"
 )
 
-type Config struct {
+type Scenarios struct {
 	Users    []User    `json:"users"`
 	Sessions []Session `json:"sessions"`
 	Url      string    `json:"url"`
@@ -32,7 +32,7 @@ type Session struct {
 	Delay    *float64 `json:"delay,omitempty"`
 }
 
-func (cfg Config) Validate() error {
+func (cfg Scenarios) Validate() error {
 	for _, user := range cfg.Users {
 		if user.Name == "" || user.Password == "" {
 			return errors.New("must set user name and password for all users")
@@ -59,8 +59,8 @@ func (cfg Config) Validate() error {
 	return nil
 }
 
-func read(path string) (Config, error) {
-	var config Config
+func read(path string) (Scenarios, error) {
+	var config Scenarios
 	file, err := os.ReadFile(path)
 	if err != nil {
 		return config, err
