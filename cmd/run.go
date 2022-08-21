@@ -24,8 +24,10 @@ type runCmd struct {
 
 type runOpts struct {
 	scenariosPath string
+	scriptPath    string
 	url           string
 	numSessions   int
+	unique        bool
 }
 
 func newRun(runOpts runOpts) error {
@@ -59,31 +61,45 @@ func newRun(runOpts runOpts) error {
 	users := lo.SliceToMap(scenarios.Users, func(user config.User) (string, string) {
 		return user.Name, user.Password
 	})
+	hasRunForUser := make(map[string]bool)
+	for user := range users {
+		hasRunForUser[user] = false
+	}
 	//rand.Shuffle(len(sessions), func(i, j int) { sessions[i], sessions[j] = sessions[j], sessions[i] })
 	for i, session := range scenarios.Sessions {
 		if i >= runOpts.numSessions {
 			continue
 		}
+		if runOpts.unique {
+			if hasRunForUser[session.User] {
+				continue
+			}
+			hasRunForUser[session.User] = true
+		}
 		wg.Add(1)
 		var delayMs int
-		if session.Delay != nil {
-			// just in case a negative delay slips
-			delayMs = int(math.Max(*session.Delay, 0) * 1000)
+		if session.Delay == nil {
+			delayMs = 5
+		} else {
+			delayMs = int(math.Max(*session.Delay, 0)*1000) + 5
 		}
 		go func(wg *sync.WaitGroup, s config.Session, num int) {
+			startTime := time.Now()
+			log.Printf("queued session %v for user: %s after %.3f seconds since start\n", num, s.User, time.Since(startTime).Seconds())
 			defer wg.Done()
 			select {
 			case <-ctx.Done():
+				log.Warnf("context done for session %d before starting", num)
 				return
 			case <-time.Tick(time.Duration(delayMs) * time.Millisecond):
-				fmt.Printf("launching session %v for user: %s\n", num, s.User)
+				log.Printf("launching session %v for user: %s after %.3f seconds since start\n", num, s.User, time.Since(startTime).Seconds())
 				opts := runner.NewOptsFromSession(s)
 				password, ok := users[s.User]
 				if !ok {
 					log.Errorf("could not look up password for user %s, not starting session %v", s.User, num)
 					return
 				}
-				runner := runner.NewRunner(ctx, "simple_user_sim.py", url, s.User, password, opts)
+				runner := runner.NewRunner(ctx, runOpts.scriptPath, url, s.User, password, s.RemoteCmdBase64, opts)
 				if err := runner.Run(); err != nil {
 					log.Errorf("cmd failed to start session %v for user: %s with err %s\n", num, s.User, err)
 					return
@@ -93,11 +109,11 @@ func newRun(runOpts runOpts) error {
 		}(wg, session, i+1)
 	}
 	wg.Wait()
-	fmt.Println("done waiting on sessions to finish/cleanup")
+	log.Info("done waiting on sessions to finish/cleanup")
 	return ctx.Err()
 }
 
-func setRunOpts(runOpts *runOpts) {
+func setRunOpts(runOpts *runOpts, args []string) {
 	runOpts.scenariosPath = viper.GetString("scenarios-path")
 	runOpts.url = viper.GetString("url")
 	numSessions := viper.GetInt("num-sessions")
@@ -106,9 +122,24 @@ func setRunOpts(runOpts *runOpts) {
 	} else {
 		runOpts.numSessions = numSessions
 	}
+	if len(args) != 1 {
+		log.Fatal("must specify script to run")
+	}
+	runOpts.scriptPath = args[0]
+	runOpts.unique = viper.GetBool("unique")
+
 }
 
 func (opts *runOpts) Validate() error {
+	_, err := os.Open(opts.scriptPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("script file %s does not exist", opts.scriptPath)
+		} else {
+			return fmt.Errorf("could not open script file %s with err %s", opts.scriptPath, err)
+		}
+
+	}
 	return nil
 }
 
@@ -117,9 +148,9 @@ func newRunCmd() *runCmd {
 
 	cmd := &cobra.Command{
 		Use:   "run",
-		Short: "run",
+		Short: "run <path/to/python/script>",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			setRunOpts(&root.opts)
+			setRunOpts(&root.opts, args)
 			if err := root.opts.Validate(); err != nil {
 				return err
 			}
@@ -140,6 +171,8 @@ func newRunCmd() *runCmd {
 	viper.BindPFlag("num-sessions", cmd.Flags().Lookup("num-sessions"))
 	cmd.Flags().String("url", "", "path to server")
 	viper.BindPFlag("url", cmd.Flags().Lookup("url"))
+	cmd.Flags().Bool("unique", false, "run sessions for each user only once")
+	viper.BindPFlag("unique", cmd.Flags().Lookup("unique"))
 	root.cmd = cmd
 
 	return root

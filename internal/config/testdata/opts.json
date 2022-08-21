@@ -8,21 +8,25 @@
   "sessions": [
     {
       "user": "user1",
-      "password": "password123"
+      "remote_cmd_base64": "c291cmNlKCJ0ZXN0LlIiKQ=="
     },
     {
       "user": "user1",
+      "remote_cmd_base64": "c291cmNlKCJ0ZXN0LlIiKQ==",
       "name": "test-session",
       "id": "abc-1234"
     },
     {
       "user": "user1",
+      "remote_cmd_base64": "c291cmNlKCJ0ZXN0LlIiKQ==",
       "headless": true,
       "new": true,
       "delay": 1.5
     },
     {
       "user": "user1",
+      "remote_cmd_base64": "c291cmNlKCJ0ZXN0LlIiKQ==",
+      "name": "existing-session",
       "new": false,
       "headless": false,
       "delay": 0

@@ -24,12 +24,13 @@ type User struct {
 
 // Session defines a new selenium session
 type Session struct {
-	User     string   `json:"user,omitempty"`
-	Name     *string  `json:"name,omitempty"`
-	Id       *string  `json:"id,omitempty"`
-	Headless *bool    `json:"headless,omitempty"`
-	New      *bool    `json:"new,omitempty"`
-	Delay    *float64 `json:"delay,omitempty"`
+	User            string   `json:"user,omitempty"`
+	RemoteCmdBase64 string   `json:"remote_cmd_base64,omitempty"`
+	Name            *string  `json:"name,omitempty"`
+	Id              *string  `json:"id,omitempty"`
+	Headless        *bool    `json:"headless,omitempty"`
+	New             *bool    `json:"new,omitempty"`
+	Delay           *float64 `json:"delay,omitempty"`
 }
 
 func (cfg Scenarios) Validate() error {
@@ -54,6 +55,9 @@ func (cfg Scenarios) Validate() error {
 			if session.Name == nil || (session.Name != nil && *session.Name == "") {
 				return errors.New("any non-new session must also have a name")
 			}
+		}
+		if session.RemoteCmdBase64 == "" {
+			return errors.New("must set remote_cmd_base64 for all sessions")
 		}
 	}
 	return nil

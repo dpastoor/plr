@@ -15,33 +15,38 @@ func TestNewConfig(tt *testing.T) {
 		{
 			name: "simple",
 			session: config.Session{
-				User: "user1",
+				User:            "user1",
+				RemoteCmdBase64: "c291cmNlKCJ0ZXN0LlIiKQ==",
 			},
 		},
 		{
 			name: "with optional strings",
 			session: config.Session{
-				User: "user1",
-				Name: config.StringPtr("test-session"),
-				Id:   config.StringPtr("abc-1234"),
+				User:            "user1",
+				RemoteCmdBase64: "c291cmNlKCJ0ZXN0LlIiKQ==",
+				Name:            config.StringPtr("test-session"),
+				Id:              config.StringPtr("abc-1234"),
 			},
 		},
 		{
 			name: "truthy set",
 			session: config.Session{
-				User:     "user1",
-				New:      config.BoolPtr(true),
-				Headless: config.BoolPtr(true),
-				Delay:    config.Float64Ptr(1.5),
+				User:            "user1",
+				RemoteCmdBase64: "c291cmNlKCJ0ZXN0LlIiKQ==",
+				New:             config.BoolPtr(true),
+				Headless:        config.BoolPtr(true),
+				Delay:           config.Float64Ptr(1.5),
 			},
 		},
 		{
 			name: "falsey set",
 			session: config.Session{
-				User:     "user1",
-				New:      config.BoolPtr(false),
-				Headless: config.BoolPtr(false),
-				Delay:    config.Float64Ptr(0.0),
+				User:            "user1",
+				RemoteCmdBase64: "c291cmNlKCJ0ZXN0LlIiKQ==",
+				Name:            config.StringPtr("existing-session"),
+				New:             config.BoolPtr(false),
+				Headless:        config.BoolPtr(false),
+				Delay:           config.Float64Ptr(0.0),
 			},
 		},
 	}
