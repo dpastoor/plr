@@ -120,7 +120,7 @@ func NewOptsFromSession(session config.Session) *runOpts {
 		}
 	}
 
-	if session.Headless != nil && *session.Headless {
+	if session.Headless == nil || *session.Headless {
 		opts.Apply(WithHeadless())
 	}
 	if session.Id != nil && *session.Id != "" {
