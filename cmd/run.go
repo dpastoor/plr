@@ -28,6 +28,7 @@ type runOpts struct {
 	url           string
 	numSessions   int
 	unique        bool
+	noDelay       bool
 }
 
 func newRun(runOpts runOpts) error {
@@ -67,6 +68,9 @@ func newRun(runOpts runOpts) error {
 	}
 	//rand.Shuffle(len(sessions), func(i, j int) { sessions[i], sessions[j] = sessions[j], sessions[i] })
 	for i, session := range scenarios.Sessions {
+		if runOpts.noDelay {
+			session.Delay = nil
+		}
 		if i >= runOpts.numSessions {
 			continue
 		}
@@ -127,7 +131,7 @@ func setRunOpts(runOpts *runOpts, args []string) {
 	}
 	runOpts.scriptPath = args[0]
 	runOpts.unique = viper.GetBool("unique")
-
+	runOpts.noDelay = viper.GetBool("no-delay")
 }
 
 func (opts *runOpts) Validate() error {
@@ -173,6 +177,8 @@ func newRunCmd() *runCmd {
 	viper.BindPFlag("url", cmd.Flags().Lookup("url"))
 	cmd.Flags().Bool("unique", false, "run sessions for each user only once")
 	viper.BindPFlag("unique", cmd.Flags().Lookup("unique"))
+	cmd.Flags().Bool("no-delay", false, "start immediately instead of waiting for delay")
+	viper.BindPFlag("no-delay", cmd.Flags().Lookup("no-delay"))
 	root.cmd = cmd
 
 	return root
