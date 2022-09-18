@@ -31,6 +31,9 @@ type Session struct {
 	Headless        *bool    `json:"headless,omitempty"`
 	New             *bool    `json:"new,omitempty"`
 	Delay           *float64 `json:"delay,omitempty"`
+	Ncpu            *int     `json:"ncpu,omitempty"`
+	Memory          *int     `json:"memory,omitempty"`
+	Image           *string  `json:"image,omitempty"`
 }
 
 func (cfg Scenarios) Validate() error {

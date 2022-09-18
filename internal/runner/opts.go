@@ -14,6 +14,9 @@ type runOpts struct {
 	// default of new session to be true,
 	// and if false, need to provide an existing name
 	NewSession bool
+	Ncpu       int
+	Memory     int
+	Image      string
 	Stdin      io.ReadCloser
 	Stdout     io.Writer
 	Stderr     io.Writer
@@ -33,6 +36,27 @@ func NewDefaultRunOpts(options ...func(*runOpts)) *runOpts {
 // Apply allows a functional option to be applied to a given runOpt instance
 func (opts *runOpts) Apply(f func(*runOpts)) {
 	f(opts)
+}
+
+// WithNcpu sets the number of cpus to use
+func WithNcpu(ncpu int) func(*runOpts) {
+	return func(opts *runOpts) {
+		opts.Ncpu = ncpu
+	}
+}
+
+// WithMemory sets the memory to use
+func WithMemory(memory int) func(*runOpts) {
+	return func(opts *runOpts) {
+		opts.Memory = memory
+	}
+}
+
+// WithImage sets the image to use
+func WithImage(image string) func(*runOpts) {
+	return func(opts *runOpts) {
+		opts.Image = image
+	}
 }
 
 // WithNoIO suppresses stdin, stdout, and stderr
@@ -119,7 +143,15 @@ func NewOptsFromSession(session config.Session) *runOpts {
 			opts.Apply(WithSessionName(*session.Name))
 		}
 	}
-
+	if session.Ncpu != nil && *session.Ncpu > 0 {
+		opts.Apply(WithNcpu(*session.Ncpu))
+	}
+	if session.Memory != nil && *session.Memory > 0 {
+		opts.Apply(WithMemory(*session.Memory))
+	}
+	if session.Image != nil && *session.Image != "" {
+		opts.Apply(WithImage(*session.Image))
+	}
 	if session.Headless == nil || *session.Headless {
 		opts.Apply(WithHeadless())
 	}

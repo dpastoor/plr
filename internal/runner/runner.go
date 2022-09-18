@@ -45,6 +45,16 @@ func NewRunner(ctx context.Context, script string, url string, user string, pass
 		cmdArgs = append(cmdArgs, fmt.Sprintf("--session-name=%s", opts.SessionName))
 	}
 
+	if opts.Ncpu > 0 {
+		cmdArgs = append(cmdArgs, fmt.Sprintf("--ncpu=%d", opts.Ncpu))
+	}
+	if opts.Memory > 0 {
+		cmdArgs = append(cmdArgs, fmt.Sprintf("--memory=%d", opts.Memory))
+	}
+	if opts.Image != "" {
+		cmdArgs = append(cmdArgs, fmt.Sprintf("--image=%s", opts.Image))
+	}
+
 	cmd := command.NewWithContext(ctx, "python", cmdArgs...)
 	cmd.Env = env.AsSlice()
 	command.WireIO(opts.Stdin, opts.Stdout, opts.Stderr).Apply(cmd)

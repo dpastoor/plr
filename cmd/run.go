@@ -89,7 +89,7 @@ func newRun(runOpts runOpts) error {
 		}
 		go func(wg *sync.WaitGroup, s config.Session, num int) {
 			startTime := time.Now()
-			log.Printf("queued session %v for user: %s after %.3f seconds since start\n", num, s.User, time.Since(startTime).Seconds())
+			log.Infof("queued session %v for user: %s after %.3f seconds since start\n", num, s.User, time.Since(startTime).Seconds())
 			defer wg.Done()
 			select {
 			case <-ctx.Done():
