@@ -46,7 +46,8 @@ builds:
     env:
       - CGO_ENABLED=0
     goos:
-      - windows
+    # disable windows until patch environment package to work with windows
+      #- windows
       - darwin
       - linux
     goarch:
