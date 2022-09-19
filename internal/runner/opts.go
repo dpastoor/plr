@@ -17,6 +17,7 @@ type runOpts struct {
 	Ncpu       int
 	Memory     int
 	Image      string
+	PythonPath string
 	Stdin      io.ReadCloser
 	Stdout     io.Writer
 	Stderr     io.Writer
@@ -25,7 +26,7 @@ type runOpts struct {
 // NewRunOpts sets up the options for a runner with a default
 // configuration of creating a new session and wiring up to stdin, stdout, and stderr
 func NewDefaultRunOpts(options ...func(*runOpts)) *runOpts {
-	opts := &runOpts{NewSession: true}
+	opts := &runOpts{NewSession: true, PythonPath: "python"}
 	opts.Apply(WithInteractiveIO())
 	for _, option := range options {
 		option(opts)
@@ -36,6 +37,12 @@ func NewDefaultRunOpts(options ...func(*runOpts)) *runOpts {
 // Apply allows a functional option to be applied to a given runOpt instance
 func (opts *runOpts) Apply(f func(*runOpts)) {
 	f(opts)
+}
+
+func WithPythonPath(pythonPath string) func(*runOpts) {
+	return func(opts *runOpts) {
+		opts.PythonPath = pythonPath
+	}
 }
 
 // WithNcpu sets the number of cpus to use

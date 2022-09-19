@@ -29,6 +29,7 @@ type runOpts struct {
 	numSessions   int
 	unique        bool
 	noDelay       bool
+	python        string
 }
 
 func newRun(runOpts runOpts) error {
@@ -98,6 +99,7 @@ func newRun(runOpts runOpts) error {
 			case <-time.Tick(time.Duration(delayMs) * time.Millisecond):
 				log.Printf("launching session %v for user: %s after %.3f seconds since start\n", num, s.User, time.Since(startTime).Seconds())
 				opts := runner.NewOptsFromSession(s)
+				opts.Apply(runner.WithPythonPath(runOpts.python))
 				password, ok := users[s.User]
 				if !ok {
 					log.Errorf("could not look up password for user %s, not starting session %v", s.User, num)
@@ -132,6 +134,7 @@ func setRunOpts(runOpts *runOpts, args []string) {
 	runOpts.scriptPath = args[0]
 	runOpts.unique = viper.GetBool("unique")
 	runOpts.noDelay = viper.GetBool("no-delay")
+	runOpts.python = viper.GetString("python")
 }
 
 func (opts *runOpts) Validate() error {
@@ -179,6 +182,12 @@ func newRunCmd() *runCmd {
 	viper.BindPFlag("unique", cmd.Flags().Lookup("unique"))
 	cmd.Flags().Bool("no-delay", false, "start immediately instead of waiting for delay")
 	viper.BindPFlag("no-delay", cmd.Flags().Lookup("no-delay"))
+
+	cmd.Flags().String("python", "python", "path to python executable")
+	viper.BindPFlag("python", cmd.Flags().Lookup("python"))
+
+	viper.SetEnvPrefix("PLR")
+	viper.BindEnv("python")
 	root.cmd = cmd
 
 	return root

@@ -55,7 +55,7 @@ func NewRunner(ctx context.Context, script string, url string, user string, pass
 		cmdArgs = append(cmdArgs, fmt.Sprintf("--image=%s", opts.Image))
 	}
 
-	cmd := command.NewWithContext(ctx, "python", cmdArgs...)
+	cmd := command.NewWithContext(ctx, opts.PythonPath, cmdArgs...)
 	cmd.Env = env.AsSlice()
 	command.WireIO(opts.Stdin, opts.Stdout, opts.Stderr).Apply(cmd)
 	return &Runner{
